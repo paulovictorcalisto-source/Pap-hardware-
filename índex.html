@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plataforma de Otimização de Hardware</title>
+<style>
+  :root{
+    --bg:#0e1218; --grid:rgba(255,255,255,.035);
+    --panel:#151b23; --panel2:#1a212b; --line:#28313d;
+    --text:#e8ebf0; --muted:#7a8494;
+    --accent:#ffab4a; --accent-dim:rgba(255,171,74,.13); --accent-ink:#1a1207;
+    --ok:#5cb88a; --warn:#e0a640; --bad:#e2705a;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;position:relative;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:34px 34px}
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:36px 20px 80px}
+  h1{font-size:1.6rem;margin:0 0 8px;letter-spacing:-.01em;font-weight:650}
+  .lead{color:var(--muted);margin:0 0 20px;max-width:58ch;font-size:.96rem}
+  .rule{width:100%;height:1px;background:var(--line);margin:0 0 28px;position:relative}
+  .rule::before{content:"";position:absolute;left:0;top:-1px;width:44px;height:3px;background:var(--accent)}
+  h2{font-size:1rem;margin:0 0 16px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:10px}
+  .stepno{font-family:var(--mono);font-size:.78rem;color:var(--accent);background:var(--accent-dim);
+    border:1px solid rgba(255,171,74,.35);border-radius:3px;padding:2px 6px;letter-spacing:.02em}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:22px;margin-bottom:16px;position:relative}
+  .step::before{content:"";position:absolute;top:-1px;left:-1px;width:13px;height:13px;
+    border-top:2px solid var(--accent);border-left:2px solid var(--accent);border-top-left-radius:4px}
+  .purpose-row{display:flex;gap:10px;flex-wrap:wrap}
+  .purpose-btn{flex:1;min-width:120px;padding:13px 12px;border-radius:4px;border:1px solid var(--line);
+    border-left:3px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;
+    font-size:.93rem;font-family:var(--sans);text-align:left;transition:border-color .12s,background .12s}
+  .purpose-btn.active{border-color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+  .field-grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:560px){.field-grid{grid-template-columns:1fr 1fr}}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+  select{width:100%;padding:10px 34px 10px 12px;border-radius:4px;border:1px solid var(--line);
+    background:var(--panel2) url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ffab4a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color:var(--text);font-size:.9rem;font-family:var(--sans);appearance:none;-webkit-appearance:none}
+  select:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .go{width:100%;padding:14px;border-radius:4px;border:none;background:var(--accent);color:var(--accent-ink);
+    font-weight:650;font-size:.96rem;cursor:pointer;margin-top:4px;font-family:var(--sans)}
+  .go:hover{background:#ffbb6b}
+  .go:disabled{opacity:.45;cursor:not-allowed}
+  .go:disabled:hover{background:var(--accent)}
+  a.go{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}
+  input[type=text],input[type=email],input[type=tel],input[type=number],textarea{
+    width:100%;padding:10px 12px;border-radius:4px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);font-size:.9rem;font-family:var(--sans)}
+  input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+  textarea{resize:vertical}
+  .order-form{padding:18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+  .order-summary{padding:18px;overflow-y:auto}
+  .order-summary dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:.88rem;margin:0 0 16px}
+  .order-summary dt{color:var(--muted)}
+  .order-summary dd{margin:0}
+  .order-id{font-family:var(--mono);color:var(--accent);font-size:1.1rem;margin-bottom:4px}
+  .order-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .order-actions a,.order-actions button{flex:1;min-width:150px}
+  .btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);
+    border-radius:4px;font-family:var(--sans);font-weight:650;font-size:.96rem;cursor:pointer;padding:14px}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  #results{display:none}
+  .check{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+  .check:last-child{border-bottom:none}
+  .tag{font-family:var(--mono);font-size:.72rem;padding:3px 7px;border-radius:3px;flex-shrink:0;margin-top:1px;
+    border:1px solid currentColor;white-space:nowrap}
+  .tag.ok{color:var(--ok);background:rgba(92,184,138,.1)}
+  .tag.warn{color:var(--warn);background:rgba(224,166,64,.1)}
+  .tag.bad{color:var(--bad);background:rgba(226,112,90,.1)}
+  .check b{display:block;font-size:.92rem;font-weight:600}
+  .check span{color:var(--muted);font-size:.85rem}
+  .fps-row{display:grid;grid-template-columns:128px 1fr 92px;gap:12px;align-items:center;padding:7px 0}
+  .fps-name{font-size:.87rem}
+  .fps-bar-track{height:7px;background:var(--line);border-radius:2px;overflow:hidden}
+  .fps-bar{height:100%;background:var(--accent);border-radius:2px}
+  .fps-val{font-family:var(--mono);font-size:.82rem;color:var(--muted);text-align:right}
+  .budget-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+  .budget-row:last-child{border-bottom:none}
+  .budget-row .nm{color:var(--text)}
+  .budget-row .vl{font-family:var(--mono);color:var(--muted);flex-shrink:0}
+  .budget-extra{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 6px;
+    border-top:1px solid var(--line);margin-top:4px}
+  .budget-extra label{margin:0;flex:1}
+  .budget-extra input{width:100px;text-align:right;padding:8px 10px}
+  .budget-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0 2px;
+    border-top:1px solid var(--line);margin-top:4px}
+  .budget-total span:first-child{font-weight:650}
+  .budget-total-val{font-family:var(--mono);color:var(--accent);font-size:1.3rem;font-weight:650}
+  .buy-item{margin-bottom:14px}
+  .buy-item .name{font-size:.9rem;margin-bottom:8px}
+  .buy-item .name b{font-weight:600}
+  .links a{display:inline-block;margin:0 8px 6px 0;padding:6px 10px;border-radius:3px;background:var(--panel2);
+    border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:.8rem;font-family:var(--mono)}
+  .links a:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+  .note{color:var(--muted);font-size:.82rem;margin-top:8px}
+  .hidden{display:none}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+ 
+  .part-trigger{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:4px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;
+    font-size:.9rem;font-family:var(--sans);text-align:left}
+  .part-trigger:hover,.part-trigger:focus{border-color:var(--accent);outline:none}
+  .part-thumb{position:relative;flex-shrink:0;width:38px;height:22px;border-radius:3px;overflow:hidden;background:var(--bg)}
+  .part-thumb-icon{position:absolute;inset:0;width:100%;height:100%;padding:3px;color:var(--muted)}
+  .part-thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .part-trigger:hover .part-thumb-icon{color:var(--accent)}
+  .part-trigger-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ 
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,8,11,.72);z-index:20;display:flex;
+    align-items:center;justify-content:center;padding:20px}
+  .modal-overlay.hidden{display:none}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:5px;max-width:680px;width:100%;
+    max-height:82vh;display:flex;flex-direction:column;position:relative}
+  .modal::before{content:"";position:absolute;top:-1px;left:-1px;width:13px;height:13px;
+    border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .modal-head h3{margin:0;font-size:.98rem;font-weight:600}
+  .modal-close{background:none;border:1px solid var(--line);color:var(--muted);width:28px;height:28px;
+    border-radius:4px;cursor:pointer;font-size:.85rem}
+  .modal-close:hover{border-color:var(--accent);color:var(--accent)}
+  .part-grid{padding:14px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(min-width:520px){.part-grid{grid-template-columns:1fr 1fr 1fr}}
+  .part-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:4px;
+    border:1px solid var(--line);border-left:3px solid var(--line);background:var(--panel2);color:var(--text);
+    cursor:pointer;text-align:left;font-family:var(--sans)}
+  .part-card:hover{border-color:var(--accent);border-left-color:var(--accent)}
+  .part-card.selected{border-color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim)}
+  .part-thumb-lg{width:100%;height:64px}
+  .part-card:hover .part-thumb-icon,.part-card.selected .part-thumb-icon{color:var(--accent)}
+  .part-card-name{font-size:.85rem;font-weight:600;line-height:1.3}
+  .part-card-tag{font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+
+  .nav{position:sticky;top:0;z-index:15;background:rgba(14,18,24,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:760px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{font-family:var(--mono);font-weight:700;font-size:.9rem;padding:14px 0}
+  .brand b{color:var(--accent)}
+  .tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:15px 12px 13px;font:inherit;font-size:.86rem;cursor:pointer;white-space:nowrap}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn:focus-visible,.seg-btn:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .live{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .live b{color:var(--accent);font-weight:650}
+  @media(max-width:640px){.tabs{order:3;flex-basis:100%}.live{margin-left:auto}}
+  .tab-panel{display:none}.tab-panel.active{display:block}
+  .preset-grid{display:grid;gap:14px;grid-template-columns:1fr}
+  @media(min-width:700px){.preset-grid{grid-template-columns:1fr 1fr}}
+  .preset{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:18px;display:flex;flex-direction:column;gap:10px;position:relative}
+  .preset::before{content:"";position:absolute;top:-1px;left:-1px;width:13px;height:13px;border-top:2px solid var(--accent);border-left:2px solid var(--accent);border-top-left-radius:4px}
+  .preset-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .preset h3{margin:0;font-size:1rem;font-weight:600}
+  .preset-price{font-family:var(--mono);color:var(--accent);font-weight:650}
+  .preset p{margin:0;color:var(--muted);font-size:.86rem}
+  .preset dl{display:grid;grid-template-columns:78px 1fr;gap:4px 10px;font-size:.8rem;margin:0}
+  .preset dt{color:var(--muted)}.preset dd{margin:0}
+  .preset .go{margin-top:auto}
+  .cmp-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .seg-btn{background:var(--panel2);border:none;color:var(--muted);padding:10px 14px;font:inherit;font-size:.86rem;cursor:pointer}
+  .seg-btn.active{background:var(--accent-dim);color:var(--accent)}
+  .cmp-bar input{flex:1;min-width:160px}
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.85rem}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:.78rem;cursor:pointer;user-select:none}
+  th:hover,th.sorted{color:var(--accent)}
+  td:not(:first-child){font-family:var(--mono);color:var(--muted)}
+  tbody tr:hover{background:var(--panel2)}
+  .lvl{display:inline-block;width:70px;height:6px;background:var(--line);border-radius:2px;overflow:hidden;vertical-align:middle}
+  .lvl i{display:block;height:100%;background:var(--accent)}
+  details{border-bottom:1px solid var(--line);padding:13px 0}
+  details:last-of-type{border-bottom:none}
+  summary{cursor:pointer;font-weight:600;font-size:.93rem;list-style:none;display:flex;justify-content:space-between;gap:12px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--accent);font-family:var(--mono)}
+  details[open] summary::after{content:"\2013"}
+  details p{color:var(--muted);font-size:.88rem;margin:10px 0 0;max-width:68ch}
+  .contact-form{display:flex;flex-direction:column;gap:14px}
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
+
+  [data-theme="light"]{--bg:#f4f1ea;--grid:rgba(0,0,0,.05);--panel:#fff;--panel2:#f3efe7;--line:#ddd6c8;--text:#1c1a16;--muted:#6b665c;
+    --accent:#c76a00;--accent-dim:rgba(199,106,0,.12);--accent-ink:#fff;--ok:#2f8f63;--warn:#b7791f;--bad:#c4452f}
+  [data-theme="light"] .nav{background:rgba(244,241,234,.94)}
+  [data-theme="light"] .go:hover{background:#e07a00}
+  .tab-panel.active{animation:tabIn .25s ease-out}
+  @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .preset{transition:transform .15s,border-color .15s}
+  .preset:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .theme-btn{border:1px solid var(--line);border-radius:4px;padding:6px 12px;margin:8px 0;font-size:.8rem}
+  .badge{background:var(--accent);color:var(--accent-ink);border-radius:9px;font-size:.7rem;padding:1px 6px;margin-left:6px;font-family:var(--mono)}
+  .badge:empty{display:none}
+  .score{display:grid;gap:22px;align-items:center}
+  @media(min-width:620px){.score{grid-template-columns:150px 1fr}}
+  .ring{position:relative;width:150px;height:150px;margin:0 auto}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .rg-bg{fill:none;stroke:var(--line);stroke-width:8}
+  .rg-fg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dasharray .9s cubic-bezier(.2,.7,.2,1)}
+  .rg-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .rg-num b{font-family:var(--mono);font-size:2rem;line-height:1}
+  .rg-num span{font-size:.76rem;color:var(--muted);margin-top:4px}
+  .sb{margin-bottom:12px}
+  .sb-h{display:flex;justify-content:space-between;font-size:.84rem;margin-bottom:5px}
+  .sb-h b{font-family:var(--mono);color:var(--accent)}
+  .sb-t{height:6px;background:var(--line);border-radius:2px;overflow:hidden}
+  .sb-t i{display:block;height:100%;width:0;background:var(--accent);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .score-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+  .kpi{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+  .kpi span{color:var(--muted)}.kpi b{font-family:var(--mono)}
+  .kpi.hl b{color:var(--accent);font-size:1.05rem}
+  .up{color:var(--ok)}.dn{color:var(--bad)}
+  .sim-note{font-size:.84rem;color:var(--muted);margin:10px 0 0}
+  .sim-note.ok{color:var(--ok)}.sim-note.bad{color:var(--bad)}
+  input[type=number]{width:100%;padding:10px 12px;border-radius:4px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit}
+  input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+  .sv-tbl th{cursor:default;color:var(--text);vertical-align:top}
+  .sv-tbl th,.sv-tbl td{white-space:normal;min-width:140px}
+  .sv-tbl th:first-child,.sv-tbl td:first-child{min-width:90px;color:var(--muted)}
+  .sv-tbl td.best{color:var(--ok);font-weight:650}
+  .sv-act{display:flex;gap:6px;margin-top:8px}
+  .sv-act button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:4px 8px;font:inherit;font-size:.74rem;cursor:pointer}
+  .sv-act button:hover{border-color:var(--accent);color:var(--accent)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--panel2);border:1px solid var(--accent);color:var(--text);
+    padding:10px 16px;border-radius:4px;font-size:.88rem;opacity:0;pointer-events:none;transition:.2s;z-index:30}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media(prefers-reduced-motion:reduce){.tab-panel.active{animation:none}.rg-fg,.sb-t i{transition:none}.preset{transition:none}}
+
+  :root{--grad:linear-gradient(135deg,#ffc371,#ff8a4a 55%,#ff5f6d)}
+  body::after{content:"";position:fixed;inset:-5%;z-index:0;pointer-events:none;
+    background:radial-gradient(620px 420px at 85% 0%,rgba(255,171,74,.18),transparent 70%),radial-gradient(520px 440px at 0% 40%,rgba(80,140,255,.11),transparent 70%),radial-gradient(520px 420px at 75% 100%,rgba(255,95,109,.09),transparent 70%);
+    animation:drift 16s ease-in-out infinite alternate}
+  @keyframes drift{to{transform:translate3d(-2%,2.5%,0) scale(1.07)}}
+  .wrap,.nav-in{max-width:960px}
+  .lead{font-size:1.05rem}
+  .tab-panel>h1{font-size:2rem;letter-spacing:-.025em;font-weight:720}
+  #tab-config>h1{font-size:clamp(2.1rem,5.4vw,3.3rem);line-height:1.07;letter-spacing:-.035em;font-weight:780;margin:6px 0 16px;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-chips{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px}
+  .hero-chips span{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:.8rem;color:var(--muted)}
+  .hero-chips span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .step,.preset{border-radius:10px;background:linear-gradient(180deg,var(--panel),var(--panel2));box-shadow:0 14px 34px -22px rgba(0,0,0,.7);transition:border-color .2s,transform .15s}
+  .step:hover{border-color:rgba(255,171,74,.35)}
+  .go{background:var(--grad);border:0;border-radius:8px;box-shadow:0 10px 26px -10px rgba(255,138,74,.65);transition:transform .15s,box-shadow .15s}
+  .go:hover,[data-theme="light"] .go:hover{background:var(--grad);transform:translateY(-2px);box-shadow:0 14px 32px -10px rgba(255,138,74,.8)}
+  .go:active{transform:none}
+  .purpose-btn{border-radius:8px;padding:19px 14px;font-weight:600;transition:transform .15s,border-color .15s,box-shadow .15s}
+  .purpose-btn:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .purpose-btn.active{box-shadow:0 0 0 1px var(--accent),0 12px 30px -14px rgba(255,171,74,.7)}
+  .part-trigger{border-radius:8px;transition:border-color .15s,box-shadow .15s,transform .15s}
+  .part-trigger:hover{border-color:var(--accent);box-shadow:0 8px 22px -12px rgba(255,171,74,.7);transform:translateY(-1px)}
+  select,input[type=text],input[type=email],input[type=tel],textarea,input[type=number]{border-radius:8px}
+  .tab-btn.active{text-shadow:0 0 18px rgba(255,171,74,.45)}
+  .rg-fg{filter:drop-shadow(0 0 6px rgba(255,171,74,.6))}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .tab-panel.active .preset{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .tab-panel.active .preset:nth-child(2){animation-delay:.06s}.tab-panel.active .preset:nth-child(3){animation-delay:.12s}
+  .tab-panel.active .preset:nth-child(4){animation-delay:.18s}.tab-panel.active .preset:nth-child(5){animation-delay:.24s}.tab-panel.active .preset:nth-child(6){animation-delay:.3s}
+  @media(prefers-reduced-motion:reduce){body::after,.tab-panel.active .preset{animation:none}}
+</style>
+</head>
+<body>
+<svg style="display:none">
+  <symbol id="icon-cpu" viewBox="0 0 64 32">
+    <rect x="14" y="6" width="36" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <rect x="22" y="12" width="20" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <line x1="8" y1="10" x2="14" y2="10" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="8" y1="16" x2="14" y2="16" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="8" y1="22" x2="14" y2="22" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="50" y1="10" x2="56" y2="10" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="50" y1="16" x2="56" y2="16" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="50" y1="22" x2="56" y2="22" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="icon-mobo" viewBox="0 0 64 32">
+    <rect x="4" y="4" width="56" height="24" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <rect x="10" y="9" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <rect x="28" y="9" width="4" height="14" fill="currentColor"/>
+    <rect x="35" y="9" width="4" height="14" fill="currentColor"/>
+    <rect x="42" y="9" width="4" height="14" fill="currentColor"/>
+    <rect x="49" y="19" width="8" height="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  </symbol>
+  <symbol id="icon-ram" viewBox="0 0 64 32">
+    <rect x="6" y="9" width="52" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <rect x="12" y="12" width="6" height="8" fill="currentColor"/>
+    <rect x="22" y="12" width="6" height="8" fill="currentColor"/>
+    <rect x="32" y="12" width="6" height="8" fill="currentColor"/>
+    <rect x="42" y="12" width="6" height="8" fill="currentColor"/>
+  </symbol>
+  <symbol id="icon-gpu" viewBox="0 0 64 32">
+    <rect x="2" y="4" width="60" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="18" cy="15" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <circle cx="18" cy="15" r="2" fill="currentColor"/>
+    <circle cx="38" cy="15" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <circle cx="38" cy="15" r="2" fill="currentColor"/>
+    <rect x="54" y="8" width="6" height="4" fill="currentColor"/>
+    <rect x="54" y="15" width="6" height="4" fill="currentColor"/>
+    <rect x="0" y="26" width="14" height="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="icon-psu" viewBox="0 0 64 32">
+    <rect x="8" y="5" width="40" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="28" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <circle cx="28" cy="16" r="2" fill="currentColor"/>
+    <path d="M48 16 h10" stroke="currentColor" stroke-width="1.6" fill="none"/>
+  </symbol>
+  <symbol id="icon-storage" viewBox="0 0 64 32">
+    <rect x="10" y="6" width="44" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="24" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <circle cx="24" cy="16" r="1.6" fill="currentColor"/>
+    <line x1="36" y1="11" x2="48" y2="11" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="36" y1="16" x2="48" y2="16" stroke="currentColor" stroke-width="1.4"/>
+    <line x1="36" y1="21" x2="48" y2="21" stroke="currentColor" stroke-width="1.4"/>
+  </symbol>
+</svg>
+<header class="nav"><div class="nav-in">
+  <span class="brand">HW<b>/</b>OPT</span>
+  <nav class="tabs" role="tablist" aria-label="Secções">
+    <button class="tab-btn active" role="tab" data-tab="config">Configurador</button>
+    <button class="tab-btn" role="tab" data-tab="presets">Builds prontas</button>
+    <button class="tab-btn" role="tab" data-tab="compare">Comparador</button>
+    <button class="tab-btn" role="tab" data-tab="tools">Ferramentas</button>
+    <button class="tab-btn" role="tab" data-tab="saved">As minhas builds<span class="badge" id="savedCount"></span></button>
+    <button class="tab-btn" role="tab" data-tab="guide">Guia e FAQ</button>
+    <button class="tab-btn" role="tab" data-tab="contact">Contacto</button>
+  </nav>
+  <button type="button" class="tab-btn theme-btn" id="themeBtn" aria-label="Mudar tema">Claro</button>
+</div></header>
+<div class="wrap">
+<section class="tab-panel active" id="tab-config">
+  <h1>Plataforma de Otimização de Hardware</h1>
+  <p class="lead">Escolhe para que é o computador e as peças que queres. Verificamos se combinam, estimamos o desempenho em alguns jogos, damos um orçamento aproximado e mostramos onde comparar preços em Portugal.</p>
+  <div class="hero-chips"><span>6 peças a escolher</span><span>Verificação de compatibilidade</span><span>Preços para Portugal</span><span>Sem registo</span></div>
+  <div class="rule"></div>
+ 
+  <div class="step">
+    <h2><span class="stepno">01</span>Para que é o PC?</h2>
+    <div class="purpose-row" id="purposeRow">
+      <button type="button" class="purpose-btn" data-v="jogos">Jogos</button>
+      <button type="button" class="purpose-btn" data-v="trabalho">Trabalho</button>
+      <button type="button" class="purpose-btn" data-v="ambos">Ambos</button>
+    </div>
+  </div>
+ 
+  <div class="step">
+    <h2><span class="stepno">02</span>Escolhe as peças</h2>
+    <div class="field-grid">
+      <div class="field">
+        <label for="cpu">Processador (CPU)</label>
+        <select id="cpu" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="cpu">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-cpu"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="mobo">Placa-mãe</label>
+        <select id="mobo" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="mobo">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-mobo"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="ram">Memória RAM</label>
+        <select id="ram" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="ram">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-ram"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="gpu">Placa gráfica</label>
+        <select id="gpu" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="gpu">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-gpu"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="psu">Fonte de alimentação</label>
+        <select id="psu" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="psu">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-psu"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+      <div class="field">
+        <label for="storage">Armazenamento</label>
+        <select id="storage" class="visually-hidden"></select>
+        <button type="button" class="part-trigger" data-picker="storage">
+          <span class="part-thumb"><svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#icon-storage"/></svg></span>
+          <span class="part-trigger-name">A carregar…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+ 
+  <button class="go" id="analyseBtn">Analisar configuração</button>
+ 
+  <div id="results">
+    <div class="step">
+      <h2>Compatibilidade</h2>
+      <div id="checks"></div>
+    </div>
+    <div class="step hidden" id="fpsStep">
+      <h2>Desempenho estimado (1080p, definições altas)</h2>
+      <div id="fpsBody"></div>
+      <p class="note">Estimativas aproximadas com base na gama da GPU/CPU, não são benchmarks reais — servem para se orientar.</p>
+    </div>
+    <div class="step hidden" id="budgetStep">
+      <h2>Orçamento estimado</h2>
+      <div id="budgetList"></div>
+      <div class="budget-total">
+        <span>Total estimado</span>
+        <span class="budget-total-val" id="budgetTotalVal">0 €</span>
+      </div>
+      <p class="note">Valor aproximado com base nos preços de mercado em Portugal (com IVA). O preço final pode variar ligeiramente consoante a disponibilidade e os preços das lojas.</p>
+    </div>
+    <div class="step">
+      <h2>Onde comprar mais barato (Portugal)</h2>
+      <div id="buyList"></div>
+      <p class="note">Não temos acesso a preços em tempo real, por isso geramos aqui pesquisas diretas nos comparadores e lojas mais usados em Portugal, para veres e compararares o preço atual de cada peça.</p>
+    </div>
+    <div class="step hidden" id="orderStep">
+      <h2>Fazer encomenda</h2>
+      <p id="orderBlocked" class="note hidden" style="margin-top:0">Esta configuração tem um erro de compatibilidade — corrige as peças antes de encomendar.</p>
+      <button type="button" class="go" id="orderBtn">Encomendar esta configuração</button>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" id="tab-presets">
+  <h1>Builds prontas</h1>
+  <p class="lead">Configurações já equilibradas para cada tipo de uso. Escolhe uma e enviamo-la para o configurador, com a análise de compatibilidade feita.</p>
+  <div class="rule"></div>
+  <div class="preset-grid" id="presetGrid"></div>
+</section>
+<section class="tab-panel" id="tab-compare">
+  <h1>Comparador de componentes</h1>
+  <p class="lead">Compara placas gráficas e processadores lado a lado. Clica no cabeçalho de uma coluna para ordenar.</p>
+  <div class="rule"></div>
+  <div class="cmp-bar">
+    <div class="seg"><button type="button" class="seg-btn active" data-cmp="gpu">Placas gráficas</button><button type="button" class="seg-btn" data-cmp="cpu">Processadores</button></div>
+    <input type="text" id="cmpSearch" placeholder="Filtrar por nome…" aria-label="Filtrar por nome">
+  </div>
+  <div class="step"><div class="tbl-wrap"><table id="cmpTable"></table></div>
+  <p class="note">*FPS médio: média das estimativas dos jogos do configurador (1080p, definições altas). Valores aproximados, não são benchmarks reais.</p></div>
+</section>
+<section class="tab-panel" id="tab-tools">
+  <h1>Ferramentas</h1>
+  <p class="lead">Estas ferramentas usam a configuração que tens escolhida no Configurador.</p>
+  <div class="rule"></div>
+  <div class="step">
+    <h2><span class="stepno">01</span>Consumo e custo de eletricidade</h2>
+    <p class="note" id="pwCfg" style="margin-top:0"></p>
+    <div class="field-grid">
+      <div class="field"><label for="hGame">Horas por dia a jogar ou em trabalho pesado: <b id="hGameV">3</b> h</label><input type="range" id="hGame" min="0" max="12" step="0.5" value="3"></div>
+      <div class="field"><label for="hLight">Horas por dia em uso leve: <b id="hLightV">4</b> h</label><input type="range" id="hLight" min="0" max="12" step="0.5" value="4"></div>
+    </div>
+    <div class="field" style="margin:14px 0;max-width:220px"><label for="kwh">Preço da eletricidade (€/kWh)</label><input type="number" id="kwh" min="0" step="0.01" value="0.20"></div>
+    <div id="pwOut"></div>
+  </div>
+  <div class="step">
+    <h2><span class="stepno">02</span>Simulador de upgrade da placa gráfica</h2>
+    <div class="field" style="margin-bottom:14px"><label for="simGpu">Trocar a placa gráfica atual por</label><select id="simGpu"></select></div>
+    <div id="simOut"></div>
+  </div>
+</section>
+<section class="tab-panel" id="tab-saved">
+  <h1>As minhas builds</h1>
+  <p class="lead">Guarda configurações no Configurador e compara-as lado a lado. Ficam guardadas neste browser.</p>
+  <div class="rule"></div>
+  <div id="savedBody"></div>
+</section>
+<section class="tab-panel" id="tab-guide">
+  <h1>Guia e perguntas frequentes</h1>
+  <p class="lead">O essencial para escolher peças que combinam bem entre si.</p>
+  <div class="rule"></div>
+  <div class="step"><details><summary>Que plataforma (socket) devo escolher?</summary><p>O processador e a placa-mãe têm de ter o mesmo socket. AM4 é a opção mais barata e só aceita DDR4. AM5 é a plataforma atual da AMD, só aceita DDR5 e tem mais margem para upgrades. LGA1700 é a da Intel (12.ª a 14.ª geração) e existem placas tanto DDR4 como DDR5.</p></details>
+<details><summary>DDR4 ou DDR5?</summary><p>A DDR5 é mais rápida e é o futuro, mas custa mais. Em jogos a 1080p a diferença costuma ser pequena, por isso com orçamento curto compensa ficar em DDR4 e gastar a diferença na placa gráfica. A RAM tem de ser do tipo que a placa-mãe suporta.</p></details>
+<details><summary>Quantos watts de fonte preciso?</summary><p>Somamos o consumo do processador e da placa gráfica, multiplicamos por 1,5 e acrescentamos 100 W de margem para o resto do sistema e para picos de consumo. Prefere fontes 80+ Bronze ou melhores, de marcas conhecidas.</p></details>
+<details><summary>16 GB ou 32 GB de RAM?</summary><p>16 GB é o mínimo recomendado para jogos atuais. 32 GB compensa para edição de vídeo, streaming e multitarefa pesada. 8 GB só serve para escritório básico.</p></details>
+<details><summary>NVMe, SATA ou HDD?</summary><p>O SSD NVMe é o mais rápido e hoje custa quase o mesmo que um SATA, por isso é a melhor escolha para o disco principal. Um HDD só faz sentido como arquivo de ficheiros, nunca como único disco.</p></details>
+<details><summary>Preciso de placa gráfica dedicada?</summary><p>Para jogos, sim. Para escritório e estudo, um processador com gráficos integrados chega. Atenção: os processadores Intel com sufixo F e vários Ryzen (série 5000 e 7500F) não têm gráficos integrados, e sem placa gráfica não há imagem.</p></details>
+<details><summary>Como são calculadas as estimativas de FPS?</summary><p>Partem da gama da placa gráfica, a 1080p com definições altas. O resultado real depende do jogo, do processador, dos drivers e das definições, por isso serve apenas de orientação e não substitui benchmarks.</p></details>
+<details><summary>Os preços são reais?</summary><p>São aproximados, com base no mercado português e com IVA. Para ver o preço atual de cada peça usa os atalhos da secção “Onde comprar mais barato” no Configurador.</p></details>
+<details><summary>Como faço uma encomenda?</summary><p>Escolhe a finalidade e as peças, carrega em “Analisar configuração” e, se não houver erros de compatibilidade, usa “Encomendar esta configuração”. Preenches os teus dados e envias o resumo por email para a loja confirmar.</p></details>
+</div>
+</section>
+<section class="tab-panel" id="tab-contact">
+  <h1>Contacto</h1>
+  <p class="lead">Tens dúvidas sobre uma configuração ou sobre uma encomenda? Escreve-nos e respondemos por email.</p>
+  <div class="rule"></div>
+  <form class="step contact-form" id="contactForm">
+    <div class="field-grid">
+      <div class="field"><label for="ctName">Nome</label><input id="ctName" type="text" required></div>
+      <div class="field"><label for="ctEmail">Email</label><input id="ctEmail" type="email" required></div>
+    </div>
+    <div class="field"><label for="ctSubject">Assunto</label><select id="ctSubject"><option>Dúvida sobre peças</option><option>Ajuda com a configuração</option><option>Estado de uma encomenda</option><option>Outro assunto</option></select></div>
+    <div class="field"><label for="ctMsg">Mensagem</label><textarea id="ctMsg" rows="5" required></textarea></div>
+    <button type="submit" class="go">Enviar mensagem</button>
+    <p class="note" id="ctNote" style="margin:0">Ao enviar, abre-se a tua aplicação de email com a mensagem preenchida.</p>
+  </form>
+</section>
+</div>
+
+<div class="modal-overlay hidden" id="orderModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="orderModalTitle">Dados para a encomenda</h3>
+      <button type="button" class="modal-close" id="orderClose" aria-label="Fechar">✕</button>
+    </div>
+    <form id="orderForm" class="order-form">
+      <div class="field"><label for="ordName">Nome</label><input id="ordName" type="text" required></div>
+      <div class="field"><label for="ordEmail">Email</label><input id="ordEmail" type="email" required></div>
+      <div class="field"><label for="ordPhone">Telefone</label><input id="ordPhone" type="tel"></div>
+      <div class="field"><label for="ordAddress">Morada de entrega</label><input id="ordAddress" type="text"></div>
+      <div class="field"><label for="ordNotes">Observações</label><textarea id="ordNotes" rows="2"></textarea></div>
+      <button type="submit" class="go">Confirmar encomenda</button>
+    </form>
+    <div class="order-summary hidden" id="orderSummary"></div>
+  </div>
+</div>
+ 
+<div class="modal-overlay hidden" id="partModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Escolhe a peça</h3>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Fechar">✕</button>
+    </div>
+    <div class="part-grid" id="partGrid"></div>
+  </div>
+</div>
+ 
+<script>
+// ---------- Dados (nome, specs e preço aproximado em euros, mercado PT, com IVA) ----------
+const CPUS = [
+  {id:'r3-4100',   name:'AMD Ryzen 3 4100',        socket:'AM4',    tdp:65,  price:60},
+  {id:'r5-5500',   name:'AMD Ryzen 5 5500',        socket:'AM4',    tdp:65,  price:75},
+  {id:'r5-5600',   name:'AMD Ryzen 5 5600',        socket:'AM4',    tdp:65,  price:110},
+  {id:'r5-5600x',  name:'AMD Ryzen 5 5600X',       socket:'AM4',    tdp:65,  price:130},
+  {id:'r7-5700x',  name:'AMD Ryzen 7 5700X',       socket:'AM4',    tdp:65,  price:160},
+  {id:'r7-5800x3d',name:'AMD Ryzen 7 5800X3D',     socket:'AM4',    tdp:105, price:280},
+  {id:'i3-12100f', name:'Intel Core i3-12100F',    socket:'LGA1700',tdp:60,  price:90},
+  {id:'i5-12400f', name:'Intel Core i5-12400F',    socket:'LGA1700',tdp:65,  price:130},
+  {id:'i5-13400f', name:'Intel Core i5-13400F',    socket:'LGA1700',tdp:65,  price:160},
+  {id:'i5-14600kf',name:'Intel Core i5-14600KF',   socket:'LGA1700',tdp:125, price:260},
+  {id:'i7-14700kf',name:'Intel Core i7-14700KF',   socket:'LGA1700',tdp:125, price:380},
+  {id:'i9-14900k', name:'Intel Core i9-14900K',    socket:'LGA1700',tdp:125, price:550},
+  {id:'r5-7500f',  name:'AMD Ryzen 5 7500F',       socket:'AM5',    tdp:65,  price:150},
+  {id:'r5-7600',   name:'AMD Ryzen 5 7600',        socket:'AM5',    tdp:65,  price:190},
+  {id:'r5-7600x',  name:'AMD Ryzen 5 7600X',       socket:'AM5',    tdp:105, price:220},
+  {id:'r7-7700x',  name:'AMD Ryzen 7 7700X',       socket:'AM5',    tdp:105, price:300},
+  {id:'r7-7800x3d',name:'AMD Ryzen 7 7800X3D',     socket:'AM5',    tdp:120, price:380},
+  {id:'r9-7900x',  name:'AMD Ryzen 9 7900X',       socket:'AM5',    tdp:170, price:430},
+];
+const MOBOS = [
+  {id:'a520',   name:'Motherboard A520 (AM4, DDR4)',       socket:'AM4',    ram:'DDR4', price:65},
+  {id:'b550',   name:'Motherboard B550 (AM4, DDR4)',       socket:'AM4',    ram:'DDR4', price:100},
+  {id:'x570',   name:'Motherboard X570 (AM4, DDR4)',       socket:'AM4',    ram:'DDR4', price:180},
+  {id:'h610',   name:'Motherboard H610 (LGA1700, DDR4)',   socket:'LGA1700',ram:'DDR4', price:80},
+  {id:'b760d4', name:'Motherboard B760 (LGA1700, DDR4)',   socket:'LGA1700',ram:'DDR4', price:120},
+  {id:'b760d5', name:'Motherboard B760 (LGA1700, DDR5)',   socket:'LGA1700',ram:'DDR5', price:150},
+  {id:'z790',   name:'Motherboard Z790 (LGA1700, DDR5)',   socket:'LGA1700',ram:'DDR5', price:250},
+  {id:'a620',   name:'Motherboard A620 (AM5, DDR5)',       socket:'AM5',    ram:'DDR5', price:100},
+  {id:'b650',   name:'Motherboard B650 (AM5, DDR5)',       socket:'AM5',    ram:'DDR5', price:170},
+  {id:'x670',   name:'Motherboard X670 (AM5, DDR5)',       socket:'AM5',    ram:'DDR5', price:260},
+];
+const RAMS = [
+  {id:'ddr4-8',  name:'8GB DDR4 (1x8GB)',   type:'DDR4', size:8,  price:25},
+  {id:'ddr4-16', name:'16GB DDR4 (2x8GB)',  type:'DDR4', size:16, price:40},
+  {id:'ddr4-32', name:'32GB DDR4 (2x16GB)', type:'DDR4', size:32, price:75},
+  {id:'ddr4-64', name:'64GB DDR4 (2x32GB)', type:'DDR4', size:64, price:150},
+  {id:'ddr5-8',  name:'8GB DDR5 (1x8GB)',   type:'DDR5', size:8,  price:35},
+  {id:'ddr5-16', name:'16GB DDR5 (2x8GB)',  type:'DDR5', size:16, price:55},
+  {id:'ddr5-32', name:'32GB DDR5 (2x16GB)', type:'DDR5', size:32, price:100},
+  {id:'ddr5-64', name:'64GB DDR5 (2x32GB)', type:'DDR5', size:64, price:200},
+];
+const GPUS = [
+  {id:'igpu',        name:'Sem placa dedicada (gráfica integrada)', tdp:0,   tier:0, price:0},
+  {id:'gtx1650',      name:'NVIDIA GTX 1650',        tdp:75,  tier:1, price:160},
+  {id:'rx6400',       name:'AMD RX 6400',            tdp:53,  tier:1, price:120},
+  {id:'gtx1660super', name:'NVIDIA GTX 1660 Super',  tdp:125, tier:2, price:200},
+  {id:'rx6500xt',     name:'AMD RX 6500 XT',         tdp:107, tier:2, price:150},
+  {id:'rtx3050',      name:'NVIDIA RTX 3050',        tdp:130, tier:3, price:230},
+  {id:'rx6600',       name:'AMD RX 6600',            tdp:132, tier:3, price:220},
+  {id:'rtx3060',      name:'NVIDIA RTX 3060',        tdp:170, tier:4, price:280},
+  {id:'rtx4060',      name:'NVIDIA RTX 4060',        tdp:115, tier:4, price:310},
+  {id:'rx7600',       name:'AMD RX 7600',            tdp:165, tier:4, price:270},
+  {id:'rtx4060ti',    name:'NVIDIA RTX 4060 Ti',     tdp:160, tier:5, price:430},
+  {id:'rx6700xt',     name:'AMD RX 6700 XT',         tdp:230, tier:5, price:380},
+  {id:'rx7700xt',     name:'AMD RX 7700 XT',         tdp:245, tier:5, price:470},
+  {id:'rtx4070',      name:'NVIDIA RTX 4070',        tdp:200, tier:6, price:600},
+  {id:'rx7800xt',     name:'AMD RX 7800 XT',         tdp:263, tier:6, price:550},
+  {id:'rtx4070super', name:'NVIDIA RTX 4070 Super',  tdp:220, tier:7, price:650},
+  {id:'rtx4070ti',    name:'NVIDIA RTX 4070 Ti',     tdp:285, tier:7, price:800},
+  {id:'rx7900gre',    name:'AMD RX 7900 GRE',        tdp:260, tier:7, price:700},
+  {id:'rtx4080super', name:'NVIDIA RTX 4080 Super',  tdp:320, tier:8, price:1100},
+  {id:'rx7900xtx',    name:'AMD RX 7900 XTX',        tdp:355, tier:8, price:950},
+  {id:'rtx4090',      name:'NVIDIA RTX 4090',        tdp:450, tier:9, price:1900},
+];
+const PSUS = [
+  {id:'psu450', name:'Fonte 450W 80+ Bronze',    watt:450,  price:45},
+  {id:'psu500', name:'Fonte 500W 80+ Bronze',    watt:500,  price:55},
+  {id:'psu550', name:'Fonte 550W 80+ Bronze',    watt:550,  price:65},
+  {id:'psu650', name:'Fonte 650W 80+ Bronze',    watt:650,  price:80},
+  {id:'psu750', name:'Fonte 750W 80+ Gold',      watt:750,  price:100},
+  {id:'psu850', name:'Fonte 850W 80+ Gold',      watt:850,  price:130},
+  {id:'psu1000',name:'Fonte 1000W 80+ Platinum', watt:1000, price:180},
+];
+const STORAGES = [
+  {id:'hdd1tb',     name:'HDD 1TB (só para dados)', price:45},
+  {id:'ssdsata480', name:'SSD SATA 480GB',          price:30},
+  {id:'ssd250',     name:'SSD NVMe 250GB',          price:25},
+  {id:'ssd500',     name:'SSD NVMe 500GB',          price:35},
+  {id:'ssd1tb',     name:'SSD NVMe 1TB',            price:55},
+  {id:'ssd2tb',     name:'SSD NVMe 2TB',            price:100},
+  {id:'ssd4tb',     name:'SSD NVMe 4TB',            price:220},
+];
+ 
+// FPS aproximado por tier de GPU (min-max), 1080p
+const FPS_TABLE = {
+  'Valorant':          [[70,100],[140,180],[180,220],[220,260],[260,300],[300,350],[300,350],[300,350],[300,350],[300,350]],
+  'CS2':               [[45,65], [90,120], [120,150],[150,190],[190,230],[230,270],[270,310],[300,330],[300,350],[300,350]],
+  'Fortnite':          [[20,35], [45,60],  [60,80],  [80,105], [105,130],[130,155],[155,180],[180,205],[205,230],[230,260]],
+  'League of Legends': [[80,110],[150,190],[190,230],[230,270],[270,300],[300,350],[300,350],[300,350],[300,350],[300,350]],
+};
+ 
+// ---------- Utilidades ----------
+function fill(select, list){
+  select.innerHTML = list.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+fill(document.getElementById('cpu'), CPUS);
+fill(document.getElementById('mobo'), MOBOS);
+fill(document.getElementById('ram'), RAMS);
+fill(document.getElementById('gpu'), GPUS);
+fill(document.getElementById('psu'), PSUS);
+fill(document.getElementById('storage'), STORAGES);
+ 
+function byId(list,id){ return list.find(x=>x.id===id); }
+ 
+let purpose = null;
+let activePicker = null;
+let lastConfig = null;
+let currentSubtotal = 0;
+ 
+// ---------- Seletor de peças em cartões, com foto real se existir ----------
+// Para usar fotos verdadeiras: cria uma pasta "imagens/<categoria>/" ao lado deste
+// ficheiro e coloca lá um ficheiro "<id-da-peça>.jpg" (o id está nos dados acima,
+// ex: imagens/gpu/rtx4070.jpg). Se a imagem não existir, mostra-se um ícone.
+const GPU_TIER_LABEL = {0:'Sem GPU dedicada',1:'Entrada',2:'Entrada',3:'Média',4:'Média',
+  5:'Alta',6:'Alta',7:'Topo de gama',8:'Topo de gama',9:'Topo de gama'};
+ 
+const PICKERS = {
+  cpu:    {list:CPUS,     icon:'icon-cpu',     folder:'imagens/cpu'},
+  mobo:   {list:MOBOS,    icon:'icon-mobo',    folder:'imagens/motherboard'},
+  ram:    {list:RAMS,     icon:'icon-ram',     folder:'imagens/ram'},
+  gpu:    {list:GPUS,     icon:'icon-gpu',     folder:'imagens/gpu', tier:GPU_TIER_LABEL},
+  psu:    {list:PSUS,     icon:'icon-psu',     folder:'imagens/psu'},
+  storage:{list:STORAGES, icon:'icon-storage', folder:'imagens/armazenamento'},
+};
+ 
+function thumbInner(cfg, item){
+  return `<svg class="part-thumb-icon" viewBox="0 0 64 32"><use href="#${cfg.icon}"/></svg>
+    <img class="part-thumb-img" src="${cfg.folder}/${item.id}.jpg" alt="" loading="lazy" onerror="this.remove()">`;
+}
+ 
+function updateTrigger(key){
+  const cfg = PICKERS[key];
+  const item = byId(cfg.list, document.getElementById(key).value);
+  const btn = document.querySelector('.part-trigger[data-picker="'+key+'"]');
+  btn.querySelector('.part-thumb').innerHTML = thumbInner(cfg, item);
+  btn.querySelector('.part-trigger-name').textContent = item.name;
+}
+ 
+function renderPartGrid(key){
+  const cfg = PICKERS[key];
+  const current = document.getElementById(key).value;
+  document.getElementById('partGrid').innerHTML = cfg.list.map(item => `
+    <button type="button" class="part-card${item.id===current?' selected':''}" data-id="${item.id}">
+      <span class="part-thumb part-thumb-lg">${thumbInner(cfg, item)}</span>
+      <span class="part-card-name">${item.name}</span>
+      ${cfg.tier ? `<span class="part-card-tag">${cfg.tier[item.tier]}</span>` : ''}
+    </button>
+  `).join('');
+  document.querySelectorAll('.part-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      document.getElementById(activePicker).value = card.dataset.id;
+      updateTrigger(activePicker);
+      closePicker();
+    });
+  });
+}
+ 
+function openPicker(key){
+  activePicker = key;
+  renderPartGrid(key);
+  document.getElementById('partModal').classList.remove('hidden');
+}
+function closePicker(){ document.getElementById('partModal').classList.add('hidden'); }
+ 
+document.querySelectorAll('.part-trigger').forEach(btn=>{
+  btn.addEventListener('click', ()=> openPicker(btn.dataset.picker));
+});
+document.getElementById('modalClose').addEventListener('click', closePicker);
+document.getElementById('partModal').addEventListener('click', e=>{ if(e.target.id==='partModal') closePicker(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closePicker(); closeOrderModal(); } });
+Object.keys(PICKERS).forEach(updateTrigger);
+ 
+// ---------- Finalidade ----------
+document.querySelectorAll('.purpose-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.purpose-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    purpose = btn.dataset.v;
+  });
+});
+ 
+function googleLink(name){
+  return 'https://www.google.com/search?q=' + encodeURIComponent(name + ' preço Portugal comprar');
+}
+ 
+// ---------- Orçamento ----------
+// Valor interno (montagem + sistema operativo + margem de segurança).
+// Não aparece ao cliente: já vai somado ao total. Muda aqui se quiseres (ex: 150 ou 200).
+const EXTRA_COST = 180;
+ 
+function updateBudgetTotal(){
+  document.getElementById('budgetTotalVal').textContent = (currentSubtotal + EXTRA_COST) + ' €';
+}
+ 
+// ---------- Análise ----------
+document.getElementById('analyseBtn').addEventListener('click', ()=>{
+  if(!purpose){ alert('Escolhe primeiro se o PC é para jogos, trabalho ou ambos.'); return; }
+ 
+  const cpu = byId(CPUS, document.getElementById('cpu').value);
+  const mobo = byId(MOBOS, document.getElementById('mobo').value);
+  const ram = byId(RAMS, document.getElementById('ram').value);
+  const gpu = byId(GPUS, document.getElementById('gpu').value);
+  const psu = byId(PSUS, document.getElementById('psu').value);
+  const storage = byId(STORAGES, document.getElementById('storage').value);
+ 
+  // ---- Compatibilidade ----
+  const checks = [];
+ 
+  if(cpu.socket === mobo.socket){
+    checks.push({ok:'ok', title:'CPU e motherboard', msg:`O ${cpu.name} encaixa na motherboard escolhida (socket ${cpu.socket}).`});
+  } else {
+    checks.push({ok:'bad', title:'CPU e motherboard incompatíveis', msg:`O ${cpu.name} usa socket ${cpu.socket}, mas a motherboard é ${mobo.socket}. Escolhe uma motherboard com o mesmo socket.`});
+  }
+ 
+  if(ram.type === mobo.ram){
+    checks.push({ok:'ok', title:'RAM e motherboard', msg:`A motherboard suporta memória ${mobo.ram}, compatível com a RAM escolhida.`});
+  } else {
+    checks.push({ok:'bad', title:'RAM incompatível', msg:`A motherboard só suporta ${mobo.ram}, mas escolheste RAM ${ram.type}. Escolhe RAM do tipo certo.`});
+  }
+ 
+  const consumo = cpu.tdp + gpu.tdp;
+  const recomendado = Math.round(consumo * 1.5 + 100);
+  if(psu.watt >= recomendado){
+    checks.push({ok:'ok', title:'Fonte de alimentação', msg:`Consumo estimado de ${consumo}W. A fonte de ${psu.watt}W tem margem suficiente (recomendado ≥${recomendado}W).`});
+  } else {
+    checks.push({ok:'warn', title:'Fonte pode ficar apertada', msg:`Consumo estimado de ${consumo}W. Para esta combinação recomenda-se uma fonte de pelo menos ${recomendado}W; a escolhida é de ${psu.watt}W.`});
+  }
+ 
+  if((purpose==='jogos'||purpose==='ambos') && gpu.tier<=2){
+    checks.push({ok:'warn', title:'GPU limitada para jogos', msg:`Para jogos vale a pena uma placa gráfica dedicada mais forte — a opção atual (${gpu.name}) só é boa para jogos muito leves.`});
+  }
+  if(purpose==='trabalho' && gpu.tier>=6){
+    checks.push({ok:'warn', title:'GPU acima do necessário', msg:`Para trabalho de escritório/produtividade, esta GPU é mais do que suficiente — podias poupar dinheiro numa placa mais simples, a menos que uses apps de vídeo/3D.`});
+  }
+  if(ram.size<16 && (purpose==='jogos'||purpose==='ambos')){
+    checks.push({ok:'warn', title:'RAM um pouco curta', msg:'Para jogos atuais, 16GB é o mínimo recomendado.'});
+  }
+ 
+  const TAG_LABEL = {ok:'Ok', warn:'Aviso', bad:'Erro'};
+  const checksEl = document.getElementById('checks');
+  checksEl.innerHTML = checks.map(c=>`
+    <div class="check"><span class="tag ${c.ok}">${TAG_LABEL[c.ok]}</span><div><b>${c.title}</b><span>${c.msg}</span></div></div>
+  `).join('');
+ 
+  // ---- FPS ----
+  const fpsStep = document.getElementById('fpsStep');
+  if(purpose==='jogos' || purpose==='ambos'){
+    fpsStep.classList.remove('hidden');
+    const gpuTier = gpu.tier;
+    const rows = Object.entries(FPS_TABLE).map(([game,tiers])=>{
+      const [min,max] = tiers[gpuTier];
+      const pct = Math.min(100, Math.round(((min+max)/2)/350*100));
+      return `<div class="fps-row"><div class="fps-name">${game}</div><div class="fps-bar-track"><div class="fps-bar" style="width:${pct}%"></div></div><div class="fps-val">${min}–${max} fps</div></div>`;
+    }).join('');
+    document.getElementById('fpsBody').innerHTML = rows;
+  } else {
+    fpsStep.classList.add('hidden');
+  }
+ 
+  // ---- Orçamento ----
+  const budgetItems = [
+    ['Processador', cpu], ['Motherboard', mobo], ['RAM', ram],
+    ['Placa gráfica', gpu], ['Fonte', psu], ['Armazenamento', storage],
+  ];
+  currentSubtotal = budgetItems.reduce((s,[,p])=>s+(p.price||0),0);
+  document.getElementById('budgetList').innerHTML = budgetItems.map(([label,p])=>
+    `<div class="budget-row"><span class="nm">${label}</span><span class="vl">${p.name}</span></div>`
+  ).join('');
+  document.getElementById('budgetStep').classList.remove('hidden');
+  updateBudgetTotal();
+ 
+  // ---- Onde comprar ----
+  const parts = [
+    {label:'Processador', name:cpu.name},
+    {label:'Motherboard', name:mobo.name},
+    {label:'RAM', name:ram.name},
+    {label:'Placa gráfica', name:gpu.name},
+    {label:'Fonte', name:psu.name},
+    {label:'Armazenamento', name:storage.name},
+  ];
+  document.getElementById('buyList').innerHTML = parts.map(p=>`
+    <div class="buy-item">
+      <div class="name"><b>${p.label}:</b> ${p.name}</div>
+      <div class="links">
+        <a href="${googleLink(p.name)}" target="_blank" rel="noopener">Comparar preço (Google)</a>
+        <a href="https://www.kuantokusta.pt/" target="_blank" rel="noopener">KuantoKusta</a>
+        <a href="https://www.pcdiga.com/" target="_blank" rel="noopener">PCDiga</a>
+        <a href="https://www.worten.pt/" target="_blank" rel="noopener">Worten</a>
+        <a href="https://www.alternate.pt/" target="_blank" rel="noopener">Alternate.pt</a>
+      </div>
+    </div>
+  `).join('');
+ 
+  // ---- Encomenda ----
+  const hasError = checks.some(c=>c.ok==='bad');
+  lastConfig = {cpu, mobo, ram, gpu, psu, storage};
+  document.getElementById('orderStep').classList.remove('hidden');
+  document.getElementById('orderBlocked').classList.toggle('hidden', !hasError);
+  document.getElementById('orderBtn').disabled = hasError;
+ 
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+});
+ 
+// ---------- Encomenda ----------
+function openOrderModal(){
+  document.getElementById('orderForm').reset();
+  document.getElementById('orderForm').classList.remove('hidden');
+  document.getElementById('orderSummary').classList.add('hidden');
+  document.getElementById('orderModalTitle').textContent = 'Dados para a encomenda';
+  document.getElementById('orderModal').classList.remove('hidden');
+}
+function closeOrderModal(){ document.getElementById('orderModal').classList.add('hidden'); }
+ 
+document.getElementById('orderBtn').addEventListener('click', openOrderModal);
+document.getElementById('orderClose').addEventListener('click', closeOrderModal);
+document.getElementById('orderModal').addEventListener('click', e=>{ if(e.target.id==='orderModal') closeOrderModal(); });
+ 
+document.getElementById('orderForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = document.getElementById('ordName').value.trim();
+  const email = document.getElementById('ordEmail').value.trim();
+  const phone = document.getElementById('ordPhone').value.trim();
+  const address = document.getElementById('ordAddress').value.trim();
+  const notes = document.getElementById('ordNotes').value.trim();
+  const c = lastConfig;
+  const total = currentSubtotal + EXTRA_COST;
+ 
+  const orderId = 'ENC-' + Date.now().toString(36).toUpperCase();
+  const dateStr = new Date().toLocaleDateString('pt-PT');
+  const items = [
+    ['Processador', c.cpu.name, c.cpu.price],
+    ['Motherboard', c.mobo.name, c.mobo.price],
+    ['RAM', c.ram.name, c.ram.price],
+    ['Placa gráfica', c.gpu.name, c.gpu.price],
+    ['Fonte', c.psu.name, c.psu.price],
+    ['Armazenamento', c.storage.name, c.storage.price],
+  ];
+ 
+  const summaryText = [
+    `Encomenda ${orderId} (${dateStr})`,
+    `Cliente: ${name}`,
+    `Email: ${email}`,
+    phone ? `Telefone: ${phone}` : null,
+    address ? `Morada: ${address}` : null,
+    '',
+    'Configuração:',
+    ...items.map(([k,v])=>`- ${k}: ${v}`),
+    `Total estimado: ~${total} €`,
+    notes ? `\nObservações: ${notes}` : null,
+  ].filter(Boolean).join('\n');
+ 
+  // Substitui pelo email real da loja/escola antes de publicares o site
+  const storeEmail = 'joaorodrigues200926@gmail.com';
+  const mailto = 'mailto:' + storeEmail + '?subject=' + encodeURIComponent('Nova encomenda ' + orderId) +
+    '&body=' + encodeURIComponent(summaryText);
+ 
+  document.getElementById('orderSummary').innerHTML = `
+    <div class="order-id">${orderId}</div>
+    <p class="note" style="margin-top:0">Encomenda registada em ${dateStr}. Envia por email para a loja confirmar.</p>
+    <dl>
+      <dt>Cliente</dt><dd>${name}</dd>
+      <dt>Email</dt><dd>${email}</dd>
+      ${phone?`<dt>Telefone</dt><dd>${phone}</dd>`:''}
+      ${address?`<dt>Morada</dt><dd>${address}</dd>`:''}
+      ${items.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}
+      <dt>Total estimado</dt><dd>~${total} €</dd>
+      ${notes?`<dt>Observações</dt><dd>${notes}</dd>`:''}
+    </dl>
+    <div class="order-actions">
+      <a class="go" href="${mailto}">Enviar por email</a>
+      <button type="button" class="btn-secondary" id="copyOrderBtn">Copiar resumo</button>
+    </div>
+  `;
+  document.getElementById('orderForm').classList.add('hidden');
+  document.getElementById('orderSummary').classList.remove('hidden');
+  document.getElementById('orderModalTitle').textContent = 'Encomenda registada';
+ 
+  document.getElementById('copyOrderBtn').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(summaryText).then(()=>{
+      const btn = document.getElementById('copyOrderBtn');
+      btn.textContent = 'Copiado!';
+      setTimeout(()=>{ btn.textContent = 'Copiar resumo'; }, 1800);
+    });
+  });
+});
+
+// ================= Novas funcionalidades =================
+const STORE_MAIL = 'joaorodrigues200926@gmail.com';
+
+// Processadores sem gráficos integrados
+const NO_IGPU = ['r3-4100','r5-5500','r5-5600','r5-5600x','r7-5700x','r7-5800x3d','i3-12100f','i5-12400f','i5-13400f','i5-14600kf','i7-14700kf','r5-7500f'];
+// Nível de desempenho do CPU em jogos (1 a 9), comparável com o nível da GPU
+const CPU_TIER = {'r3-4100':1,'r5-5500':2,'i3-12100f':2,'r5-5600':3,'r5-5600x':3,'i5-12400f':3,'r7-5700x':4,'i5-13400f':4,'r5-7500f':4,'r5-7600':4,
+  'r5-7600x':5,'i5-14600kf':5,'r7-5800x3d':5,'r7-7700x':5,'i7-14700kf':6,'r9-7900x':6,'r7-7800x3d':7,'i9-14900k':7};
+
+// ---------- Separadores ----------
+const TAB_IDS = ['config','presets','compare','tools','saved','guide','contact'];
+function showTab(id){
+  if(!TAB_IDS.includes(id)) id = 'config';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+id));
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const on = b.dataset.tab===id;
+    b.classList.toggle('active', on); b.setAttribute('aria-selected', on);
+  });
+}
+function goTab(id){
+  showTab(id); window.scrollTo({top:0});
+  try{ history.pushState(null,'','#'+id); }catch(e){ location.hash = id; }
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>goTab(b.dataset.tab)));
+['popstate','hashchange'].forEach(ev=>window.addEventListener(ev, ()=>showTab(location.hash.slice(1))));
+
+// ---------- Builds prontas ----------
+const PRESETS = [
+  {n:'Entrada 1080p', p:'jogos', d:'Jogar em Full HD com boas definições sem gastar muito.',
+   c:{cpu:'r5-5500',mobo:'b550',ram:'ddr4-16',gpu:'rx6600',psu:'psu550',storage:'ssd500'}},
+  {n:'Equilibrado', p:'jogos', d:'O ponto ideal entre preço e desempenho para 1080p alto e 1440p.',
+   c:{cpu:'i5-13400f',mobo:'b760d4',ram:'ddr4-32',gpu:'rtx4060',psu:'psu650',storage:'ssd1tb'}},
+  {n:'Alto desempenho', p:'jogos', d:'1440p com tudo no máximo, numa plataforma AM5 com margem para upgrades.',
+   c:{cpu:'r7-7800x3d',mobo:'b650',ram:'ddr5-32',gpu:'rtx4070super',psu:'psu750',storage:'ssd1tb'}},
+  {n:'Topo de gama', p:'ambos', d:'Sem compromissos: 4K, streaming e criação ao mesmo tempo.',
+   c:{cpu:'i9-14900k',mobo:'z790',ram:'ddr5-64',gpu:'rtx4090',psu:'psu1000',storage:'ssd2tb'}},
+  {n:'Escritório e estudo', p:'trabalho', d:'Económico e rápido para o dia a dia, com gráficos integrados.',
+   c:{cpu:'r5-7600',mobo:'a620',ram:'ddr5-16',gpu:'igpu',psu:'psu450',storage:'ssd500'}},
+  {n:'Criador de conteúdo', p:'ambos', d:'Edição de vídeo, 3D e multitarefa pesada, e ainda corre jogos.',
+   c:{cpu:'i7-14700kf',mobo:'b760d5',ram:'ddr5-32',gpu:'rtx4070',psu:'psu750',storage:'ssd2tb'}},
+];
+const PRESET_LABEL = {cpu:'Processador',mobo:'Placa-mãe',ram:'RAM',gpu:'Gráfica',psu:'Fonte',storage:'Disco'};
+
+function renderPresets(){
+  document.getElementById('presetGrid').innerHTML = PRESETS.map((P,i)=>{
+    const total = Object.entries(P.c).reduce((s,[k,id])=>s+byId(PICKERS[k].list,id).price, 0) + EXTRA_COST;
+    const rows = Object.entries(P.c).map(([k,id])=>`<dt>${PRESET_LABEL[k]}</dt><dd>${byId(PICKERS[k].list,id).name}</dd>`).join('');
+    return `<article class="preset">
+      <div class="preset-top"><h3>${P.n}</h3><span class="preset-price">~${total} €</span></div>
+      <p>${P.d}</p><dl>${rows}</dl>
+      <button type="button" class="go" data-preset="${i}">Usar esta configuração</button>
+    </article>`;
+  }).join('');
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click', ()=>usePreset(+b.dataset.preset)));
+}
+function usePreset(i){
+  const P = PRESETS[i];
+  Object.entries(P.c).forEach(([k,id])=>{ document.getElementById(k).value = id; updateTrigger(k); });
+  document.querySelector('.purpose-btn[data-v="'+P.p+'"]').click();
+  goTab('config');
+  document.getElementById('analyseBtn').click();
+}
+
+// ---------- Comparador ----------
+function avgFps(g){
+  const games = Object.values(FPS_TABLE);
+  return Math.round(games.reduce((s,t)=>s+(t[g.tier][0]+t[g.tier][1])/2, 0)/games.length);
+}
+const price = x => x.price ? x.price+' €' : '—';
+const lvl = n => `<span class="lvl" title="${n}/9"><i style="width:${Math.round(n/9*100)}%"></i></span>`;
+const CMP = {
+  gpu:{list:()=>GPUS, cols:[
+    {h:'Modelo',    v:x=>x.name,       f:x=>x.name},
+    {h:'Gama',      v:x=>x.tier,       f:x=>GPU_TIER_LABEL[x.tier]},
+    {h:'Consumo',   v:x=>x.tdp,        f:x=>x.tdp+' W'},
+    {h:'FPS médio*',v:x=>avgFps(x),    f:x=>avgFps(x)+' fps'},
+    {h:'Preço',     v:x=>x.price,      f:price},
+    {h:'€ por fps', v:x=>x.price?x.price/avgFps(x):null, f:x=>x.price?(x.price/avgFps(x)).toFixed(2)+' €':'—'},
+  ]},
+  cpu:{list:()=>CPUS, cols:[
+    {h:'Modelo',  v:x=>x.name,             f:x=>x.name},
+    {h:'Socket',  v:x=>x.socket,           f:x=>x.socket},
+    {h:'Nível em jogos', v:x=>CPU_TIER[x.id]||0, f:x=>lvl(CPU_TIER[x.id]||0)},
+    {h:'Consumo', v:x=>x.tdp,              f:x=>x.tdp+' W'},
+    {h:'Gráficos integrados', v:x=>NO_IGPU.includes(x.id)?0:1, f:x=>NO_IGPU.includes(x.id)?'Não':'Sim'},
+    {h:'Preço',   v:x=>x.price,            f:price},
+  ]},
+};
+let cmpKind='gpu', cmpSort=null, cmpDir=1, cmpQ='';
+function renderCmp(){
+  const cfg = CMP[cmpKind];
+  let rows = cfg.list().filter(x=>x.name.toLowerCase().includes(cmpQ));
+  if(cmpSort!==null){
+    const v = cfg.cols[cmpSort].v;
+    rows = rows.slice().sort((a,b)=>{
+      const x=v(a), y=v(b);
+      if(x==null) return 1; if(y==null) return -1;
+      return (x>y?1:x<y?-1:0)*cmpDir;
+    });
+  }
+  const t = document.getElementById('cmpTable');
+  t.innerHTML = '<thead><tr>' + cfg.cols.map((c,i)=>`<th data-c="${i}"${cmpSort===i?' class="sorted"':''}>${c.h}${cmpSort===i?(cmpDir>0?' ▲':' ▼'):''}</th>`).join('') + '</tr></thead><tbody>' +
+    rows.map(r=>'<tr>'+cfg.cols.map(c=>'<td>'+c.f(r)+'</td>').join('')+'</tr>').join('') + '</tbody>';
+  t.querySelectorAll('th').forEach(th=>th.addEventListener('click', ()=>{
+    const i = +th.dataset.c;
+    if(cmpSort===i) cmpDir*=-1; else { cmpSort=i; cmpDir=1; }
+    renderCmp();
+  }));
+}
+document.querySelectorAll('.seg-btn').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('.seg-btn').forEach(x=>x.classList.toggle('active', x===b));
+  cmpKind = b.dataset.cmp; cmpSort = null; cmpDir = 1; renderCmp();
+}));
+document.getElementById('cmpSearch').addEventListener('input', e=>{ cmpQ = e.target.value.trim().toLowerCase(); renderCmp(); });
+
+// ---------- Contacto ----------
+document.getElementById('contactForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const g = id => document.getElementById(id).value.trim();
+  const body = `Nome: ${g('ctName')}\nEmail: ${g('ctEmail')}\n\n${g('ctMsg')}`;
+  location.href = 'mailto:' + STORE_MAIL + '?subject=' + encodeURIComponent(g('ctSubject')+' - '+g('ctName')) + '&body=' + encodeURIComponent(body);
+  document.getElementById('ctNote').textContent = 'A abrir a tua aplicação de email. Se nada acontecer, escreve diretamente para ' + STORE_MAIL + '.';
+});
+
+// ---------- Arranque ----------
+renderPresets(); renderCmp();
+showTab(location.hash.slice(1));
+
+// ================= Pontuação, builds guardadas, ferramentas e partilha =================
+const SEL = Object.keys(PICKERS);
+const hw$ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function hwToast(msg){
+  let t = hw$('toast');
+  if(!t){ t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role','status'); document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+const hwCfg   = () => Object.fromEntries(SEL.map(k => [k, hw$(k).value]));
+const hwParts = c => Object.fromEntries(SEL.map(k => [k, byId(PICKERS[k].list, c[k])]));
+const hwTotal = c => { const p = hwParts(c); return SEL.reduce((s,k)=>s+(p[k].price||0), 0) + EXTRA_COST; };
+
+// Pontuação de 0 a 100 em quatro áreas, ponderada pela finalidade escolhida
+function hwScore(c, pu){
+  const p = hwParts(c), ct = CPU_TIER[p.cpu.id] || 3, gt = p.gpu.tier, gb = p.ram.size;
+  const nvme = /^ssd\d/.test(p.storage.id), cl = v => Math.max(0, Math.min(100, Math.round(v)));
+  const s = {
+    jogos:   cl(gt/9*70 + ct/7*30),
+    criacao: cl(ct/7*45 + gt/9*25 + Math.min(1, gb/64)*30),
+    multi:   cl(Math.min(1, gb/32)*55 + ct/7*45),
+    futuro:  cl((p.ram.type==='DDR5'?45:15) + (p.mobo.socket==='AM5'?35:/1700/.test(p.mobo.socket)?20:5) + (nvme?20:5)),
+  };
+  const W = {jogos:[.6,0,.2,.2], trabalho:[0,.5,.3,.2], ambos:[.35,.3,.15,.2]}[pu||'jogos'];
+  s.total = cl(s.jogos*W[0] + s.criacao*W[1] + s.multi*W[2] + s.futuro*W[3]);
+  return s;
+}
+
+function hwRenderScore(){
+  const s = hwScore(hwCfg(), purpose), res = hw$('results');
+  let st = hw$('scoreStep');
+  if(!st){ st = document.createElement('div'); st.className = 'step'; st.id = 'scoreStep'; res.insertBefore(st, res.firstChild); }
+  const lbl = s.total>=85 ? 'Excelente' : s.total>=70 ? 'Muito boa' : s.total>=50 ? 'Boa' : 'Básica';
+  const bars = [['Jogos',s.jogos],['Criação de conteúdo',s.criacao],['Multitarefa',s.multi],['Preparada para o futuro',s.futuro]];
+  st.innerHTML = `<h2>Pontuação da build</h2>
+    <div class="score">
+      <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="rg-bg"/><circle cx="50" cy="50" r="42" class="rg-fg" id="rgFg" pathLength="100" style="stroke-dasharray:0 100"/></svg>
+        <div class="rg-num"><b id="rgNum">0</b><span>${lbl}</span></div></div>
+      <div>${bars.map(([n,v])=>`<div class="sb"><div class="sb-h"><span>${n}</span><b>${v}</b></div><div class="sb-t"><i data-w="${v}"></i></div></div>`).join('')}</div>
+    </div>
+    <div class="score-actions">
+      <button type="button" class="btn-secondary" id="svBtn">Guardar build</button>
+      <button type="button" class="btn-secondary" id="lkBtn">Copiar link</button>
+      <button type="button" class="btn-secondary" id="pwBtn">Ver consumo</button>
+    </div>`;
+  hw$('svBtn').onclick = hwSave; hw$('lkBtn').onclick = hwCopyLink; hw$('pwBtn').onclick = () => goTab('tools');
+  requestAnimationFrame(()=>{
+    hw$('rgFg').style.strokeDasharray = s.total + ' 100';
+    st.querySelectorAll('.sb-t i').forEach(i => i.style.width = i.dataset.w + '%');
+  });
+  const num = hw$('rgNum'), t0 = performance.now();
+  (function f(){ const k = Math.min(1, (performance.now()-t0)/800); num.textContent = Math.round(s.total*k); if(k<1) requestAnimationFrame(f); })();
+}
+hw$('analyseBtn').addEventListener('click', ()=>{ if(purpose) hwRenderScore(); });
+
+// Aplicar uma configuração completa ao Configurador
+function hwApply(c, pu){
+  SEL.forEach(k => { hw$(k).value = c[k]; updateTrigger(k); });
+  document.querySelector('.purpose-btn[data-v="'+pu+'"]').click();
+  goTab('config'); hw$('analyseBtn').click();
+}
+
+// ---------- Builds guardadas ----------
+const SV_KEY = 'hwopt_builds_v1'; let svMem = [];
+function svLoad(){ try{ return JSON.parse(localStorage.getItem(SV_KEY)) || []; }catch(e){ return svMem; } }
+function svStore(a){ svMem = a; try{ localStorage.setItem(SV_KEY, JSON.stringify(a)); }catch(e){} }
+function hwSave(){
+  if(!purpose){ hwToast('Escolhe primeiro a finalidade do PC.'); return; }
+  const a = svLoad();
+  if(a.length >= 6){ hwToast('Máximo de 6 builds guardadas. Apaga uma primeiro.'); return; }
+  const name = (prompt('Nome para esta build:', 'Build ' + (a.length+1)) || '').trim();
+  if(!name) return;
+  a.push({name, p:purpose, c:hwCfg()}); svStore(a); renderSaved();
+  hwToast('Build guardada em “As minhas builds”.');
+}
+function renderSaved(){
+  const a = svLoad(), body = hw$('savedBody');
+  hw$('savedCount').textContent = a.length || '';
+  if(!a.length){
+    body.innerHTML = '<div class="step"><p class="note" style="margin:0">Ainda não guardaste nenhuma build. Analisa uma configuração e carrega em “Guardar build” para a comparares aqui com as outras.</p></div>';
+    return;
+  }
+  const sc = a.map(b => hwScore(b.c, b.p).total), tt = a.map(b => hwTotal(b.c)), fp = a.map(b => avgFps(byId(GPUS, b.c.gpu)));
+  const best = (arr, min) => arr.indexOf(min ? Math.min(...arr) : Math.max(...arr));
+  const rows = [
+    ...SEL.map(k => [PRESET_LABEL[k], a.map(b => byId(PICKERS[k].list, b.c[k]).name)]),
+    ['Total estimado', tt.map(v => '~'+v+' €'), best(tt, true)],
+    ['FPS médio*', fp.map(v => v+' fps'), best(fp)],
+    ['Pontuação', sc.map(v => v+'/100'), best(sc)],
+  ];
+  body.innerHTML = `<div class="step"><div class="tbl-wrap"><table class="sv-tbl"><thead><tr><th></th>` +
+    a.map((b,i)=>`<th>${esc(b.name)}<div class="sv-act"><button type="button" data-ld="${i}">Carregar</button><button type="button" data-rm="${i}">Apagar</button></div></th>`).join('') +
+    `</tr></thead><tbody>` +
+    rows.map(([l,v,bi])=>`<tr><td>${l}</td>${v.map((x,i)=>`<td${i===bi?' class="best"':''}>${x}</td>`).join('')}</tr>`).join('') +
+    `</tbody></table></div><p class="note">A verde está o melhor valor em cada linha de resumo.</p></div>`;
+  body.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => { const x = a[+b.dataset.ld]; hwApply(x.c, x.p); });
+  body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { a.splice(+b.dataset.rm, 1); svStore(a); renderSaved(); hwToast('Build apagada.'); });
+}
+
+// ---------- Partilha por link ----------
+function hwCopyLink(){
+  const c = hwCfg(), u = location.href.split('#')[0].split('?')[0] + '?b=' + SEL.map(k=>c[k]).join(',') + '&p=' + purpose;
+  (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>hwToast('Link copiado.'), ()=>prompt('Copia o link:', u));
+}
+function hwFromUrl(){
+  const q = new URLSearchParams(location.search), ids = (q.get('b')||'').split(','), p = q.get('p');
+  if(ids.length !== SEL.length || !['jogos','trabalho','ambos'].includes(p)) return;
+  if(!SEL.every((k,i)=>PICKERS[k].list.some(x=>x.id===ids[i]))) return;
+  hwApply(Object.fromEntries(SEL.map((k,i)=>[k, ids[i]])), p);
+}
+
+// ---------- Ferramentas ----------
+function refreshTools(){
+  const c = hwCfg(), p = hwParts(c), g = +hw$('hGame').value, l = +hw$('hLight').value, e = Math.max(0, +hw$('kwh').value || 0);
+  hw$('hGameV').textContent = g; hw$('hLightV').textContent = l;
+  const load = Math.round((p.cpu.tdp+p.gpu.tdp)*0.85 + 60), idle = Math.round(40 + p.cpu.tdp*0.1);
+  const kwh = (load*g + idle*l)*30/1000, cost = kwh*e;
+  hw$('pwCfg').textContent = `Configuração atual: ${p.cpu.name} com ${p.gpu.id==='igpu' ? 'gráficos integrados' : p.gpu.name}. Valores estimados.`;
+  hw$('pwOut').innerHTML =
+    `<div class="kpi"><span>Consumo em carga</span><b>~${load} W</b></div><div class="kpi"><span>Consumo em repouso</span><b>~${idle} W</b></div>` +
+    `<div class="kpi"><span>Energia por mês</span><b>${kwh.toFixed(1)} kWh</b></div>` +
+    `<div class="kpi hl"><span>Custo por mês</span><b>${cost.toFixed(2)} €</b></div><div class="kpi hl"><span>Custo por ano</span><b>${(cost*12).toFixed(0)} €</b></div>`;
+  const cur = p.gpu, sel = hw$('simGpu');
+  if(sel.dataset.cur !== cur.id){
+    sel.innerHTML = GPUS.filter(x=>x.id!==cur.id).map(x=>`<option value="${x.id}">${x.name} (${x.price ? x.price+' €' : 'integrada'})</option>`).join('');
+    sel.dataset.cur = cur.id;
+  }
+  const ng = byId(GPUS, sel.value), dp = ng.price-cur.price, df = avgFps(ng)-avgFps(cur), dw = ng.tdp-cur.tdp;
+  const need = Math.round((p.cpu.tdp+ng.tdp)*1.5 + 100), psuOk = p.psu.watt >= need;
+  const lim = ng.tier > 0 && ng.tier - (CPU_TIER[p.cpu.id]||3) >= 4, sg = n => (n>0?'+':'') + n;
+  hw$('simOut').innerHTML =
+    `<div class="kpi"><span>Diferença de preço</span><b>${sg(dp)} €</b></div>` +
+    `<div class="kpi"><span>Diferença de FPS médio</span><b class="${df>=0?'up':'dn'}">${sg(df)} fps</b></div>` +
+    `<div class="kpi"><span>Diferença de consumo</span><b>${sg(dw)} W</b></div>` +
+    `<p class="sim-note ${psuOk?'ok':'bad'}">${psuOk ? 'A fonte atual aguenta esta placa.' : `A fonte atual (${p.psu.watt} W) fica curta: seriam precisos cerca de ${need} W.`}</p>` +
+    (lim ? `<p class="sim-note bad">O ${p.cpu.name} vai limitar esta placa gráfica.</p>` : '') +
+    (df>0 && dp>0 ? `<p class="sim-note">Custo de cerca de ${(dp/df).toFixed(1)} € por cada fps ganho.</p>` : '');
+}
+['hGame','hLight','kwh','simGpu'].forEach(id => hw$(id).addEventListener('input', refreshTools));
+const _showTab = showTab;
+showTab = function(id){ _showTab(id); if(id === 'tools') refreshTools(); };
+
+// ---------- Tema claro/escuro e atalhos ----------
+function setTheme(t){
+  document.documentElement.dataset.theme = t; hw$('themeBtn').textContent = t==='light' ? 'Escuro' : 'Claro';
+  try{ localStorage.setItem('hwopt_theme', t); }catch(e){}
+}
+hw$('themeBtn').addEventListener('click', ()=>setTheme(document.documentElement.dataset.theme==='light' ? 'dark' : 'light'));
+document.addEventListener('keydown', e=>{
+  if(e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const i = +e.key; if(i >= 1 && i <= TAB_IDS.length) goTab(TAB_IDS[i-1]);
+});
+let _th = 'dark'; try{ _th = localStorage.getItem('hwopt_theme') || 'dark'; }catch(e){}
+setTheme(_th);
+renderSaved(); showTab(location.hash.slice(1)); hwFromUrl();
+</script>
+</body>
+</html>
